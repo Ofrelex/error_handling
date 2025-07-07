@@ -1,5 +1,44 @@
-# Error handling in Shell Scripting
+# Error Handling in Shell Scripting with AWS S3 Bucket Creation
+## Explanation:
+Error handling in shell scripting ensures scripts behave predictably even when issues arise. In this project, we implement error handling while creating S3 buckets for different departments. The script uses a `for` loop to iterate through department names and attempts to create a uniquely named S3 bucket for each. Before creating a bucket, the script checks if it already exists using `aws s3api head-bucket`. If it exists, an informative message is displayed. If not, the script attempts to create the bucket and checks the success using `$?`, printing appropriate messages. This ensures that errors such as duplicate buckets or failed API calls are gracefully handled.
 
-## Summary of Error Handling in Shell Scripting
+## Shell Script: `create_s3_buckets.sh`
 
-Error handling in shell scripting is essential for creating reliable and user-friendly scripts by anticipating and managing potential issues during execution. Key strategies include identifying possible errors such as invalid user input, command failures, or unavailable resources, and using conditional statements to respond appropriately based on command exit statuses. Providing clear and informative error messages enhances usability. A practical example is checking if an AWS S3 bucket already exists before creating it to prevent failure due to duplication. By incorporating checks using commands like aws s3api head-bucket, scripts can avoid redundant operations and handle errors gracefully, improving overall script robustness.
+```
+#!/bin/bash
+
+# Function to create S3 buckets for different departments
+create_s3_buckets() {
+    company="datawise"
+    departments=("Marketing" "Sales" "HR" "Operations" "Media")
+    region="us-east-1"
+
+    for department in "${departments[@]}"; do
+        bucket_name="${company,,}-${department,,}-data-bucket"  # Convert to lowercase for S3 naming compliance
+
+        # Check if the bucket already exists
+        if aws s3api head-bucket --bucket "$bucket_name" 2>/dev/null; then
+            echo "S3 bucket '$bucket_name' already exists. Skipping creation."
+        else
+            # Try to create the bucket
+            aws s3api create-bucket --bucket "$bucket_name" --region "$region" --create-bucket-configuration LocationConstraint="$region"
+            
+            if [ $? -eq 0 ]; then
+                echo "S3 bucket '$bucket_name' created successfully."
+            else
+                echo "Error: Failed to create S3 bucket '$bucket_name'."
+            fi
+        fi
+    done
+}
+
+# Call the function
+create_s3_buckets
+```
+## Key Features Demonstrated:
+
+* Use of `for` loop to iterate through departments.
+* Use of `if` condition with `aws s3api head-bucket` to check for existence.
+* Use of `$?` to capture command success/failure.
+* Informative error messages.
+* Follows AWS bucket naming rules (lowercase).
